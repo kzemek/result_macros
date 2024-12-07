@@ -4,8 +4,8 @@ on: push
 
 env:
   # OS: ubuntu-latest
-  OTP_VERSION: 22.3.2
-  ELIXIR_VERSION: 1.10.3
+  OTP_VERSION: 27.1.3
+  ELIXIR_VERSION: 1.17.3
   MIX_ENV: test
 
 jobs:

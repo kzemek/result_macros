@@ -16,7 +16,7 @@ defmodule Result.Mixfile do
         ]
       ],
       version: "1.7.2",
-      elixir: "~> 1.5",
+      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
@@ -25,7 +25,7 @@ defmodule Result.Mixfile do
         "coveralls.post": :test,
         "coveralls.html": :test
       ],
-      description: "A result pattern for elixir.",
+      description: "A result pattern for Elixir (macro version)",
       deps: deps(),
       package: package()
     ]
@@ -50,13 +50,13 @@ defmodule Result.Mixfile do
 
   defp package do
     [
+      name: "result_macros",
       maintainers: [
-        "Jindrich K. Smitka <smitka.j@gmail.com>",
-        "Ondrej Tucek <ondrej.tucek@gmail.com>"
+        "Konrad Zemek <konrad.zemek@gmail.com>"
       ],
-      licenses: ["BSD"],
+      licenses: ["BSD-3-Clause"],
       links: %{
-        "GitHub" => "https://github.com/iodevs/result"
+        "GitHub" => "https://github.com/kzemek/result_macros"
       }
     ]
   end
