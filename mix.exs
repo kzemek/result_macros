@@ -41,10 +41,10 @@ defmodule Result.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, "~> 0.28", only: :dev},
-      {:excoveralls, "~> 0.14", only: :test},
-      {:credo, "~> 1.6", only: [:dev, :test]},
-      {:dialyxir, "~> 1.1.0", only: [:dev, :test], runtime: false}
+      {:ex_doc, "~> 0.35", only: :dev},
+      {:excoveralls, "~> 0.18", only: :test},
+      {:credo, "~> 1.7", only: [:dev, :test]},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
