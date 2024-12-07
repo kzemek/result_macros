@@ -8,12 +8,7 @@ defmodule Result.Mixfile do
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
         plt_add_apps: [:mix],
         ignore_warnings: "dialyzer.ignore-warnings",
-        flags: [
-          :unmatched_returns,
-          :error_handling,
-          :race_conditions,
-          :no_opaque
-        ]
+        flags: [:unmatched_returns, :error_handling, :no_opaque]
       ],
       version: "1.7.2",
       elixir: "~> 1.17",
