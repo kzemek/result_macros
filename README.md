@@ -3,7 +3,7 @@
 [![CI](https://github.com/kzemek/result_macros/actions/workflows/ci.yaml/badge.svg)](https://github.com/kzemek/result_macros/actions/workflows/ci.yaml)
 [![Module Version](https://img.shields.io/hexpm/v/result_macros.svg)](https://hex.pm/packages/result_macros)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/result_macros/)
-[![License](https://img.shields.io/hexpm/l/result_macros.svg)](https://github.com/kzemek/result_macros/blob/master/LICENSE)
+[![License](https://img.shields.io/hexpm/l/result_macros.svg)](https://github.com/kzemek/result_macros/blob/main/LICENSE)
 
 A Result pattern for Elixir.
 
