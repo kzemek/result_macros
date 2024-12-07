@@ -16,8 +16,9 @@ defmodule Result.Error do
       iex> Result.Error.of(12345)
       {:error, 12345}
   """
-  @spec of(arg) :: t(arg) when arg: var
-  def of(value) do
-    {:error, value}
+  defmacro of(value) do
+    quote bind_quoted: [value: value] do
+      {:error, value}
+    end
   end
 end

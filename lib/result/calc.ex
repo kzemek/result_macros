@@ -23,21 +23,15 @@ defmodule Result.Calc do
       {:error, [1, 2]}
 
   """
-  @spec r_and(Result.t(any, any), Result.t(any, any)) :: Result.t([...], [...])
-  def r_and({:ok, val1}, {:ok, val2}) do
-    {:ok, [val1, val2]}
-  end
-
-  def r_and({:ok, _}, {:error, val2}) do
-    {:error, [val2]}
-  end
-
-  def r_and({:error, val1}, {:ok, _}) do
-    {:error, [val1]}
-  end
-
-  def r_and({:error, val1}, {:error, val2}) do
-    {:error, [val1, val2]}
+  defmacro r_and(left, right) do
+    quote bind_quoted: [left: left, right: right] do
+      case {left, right} do
+        {{:ok, val1}, {:ok, val2}} -> {:ok, [val1, val2]}
+        {{:ok, _}, {:error, val2}} -> {:error, [val2]}
+        {{:error, val1}, {:ok, _}} -> {:error, [val1]}
+        {{:error, val1}, {:error, val2}} -> {:error, [val1, val2]}
+      end
+    end
   end
 
   @doc """
@@ -60,21 +54,15 @@ defmodule Result.Calc do
       {:error, [1, 2]}
 
   """
-  @spec r_or(Result.t(any, any), Result.t(any, any)) :: Result.t([...], [...])
-  def r_or({:ok, val1}, {:ok, val2}) do
-    {:ok, [val1, val2]}
-  end
-
-  def r_or({:ok, val1}, {:error, _}) do
-    {:ok, [val1]}
-  end
-
-  def r_or({:error, _}, {:ok, val2}) do
-    {:ok, [val2]}
-  end
-
-  def r_or({:error, val1}, {:error, val2}) do
-    {:error, [val1, val2]}
+  defmacro r_or(left, right) do
+    quote bind_quoted: [left: left, right: right] do
+      case {left, right} do
+        {{:ok, val1}, {:ok, val2}} -> {:ok, [val1, val2]}
+        {{:ok, val1}, {:error, _}} -> {:ok, [val1]}
+        {{:error, _}, {:ok, val2}} -> {:ok, [val2]}
+        {{:error, val1}, {:error, val2}} -> {:error, [val1, val2]}
+      end
+    end
   end
 
   @doc """
@@ -100,22 +88,17 @@ defmodule Result.Calc do
       iex> Result.Calc.product(data)
       {:ok, []}
   """
-  @spec product([Result.t(any, any)]) :: Result.t([...], [...])
-  def product(list) do
-    product(list, {:ok, []})
-  end
-
-  defp product([head | tail], acc) do
-    result =
-      acc
-      |> r_and(head)
-      |> flatten()
-
-    product(tail, result)
-  end
-
-  defp product([], acc) do
-    acc
+  defmacro product(list) do
+    quote bind_quoted: [list: list] do
+      list
+      |> Enum.reduce({:ok, []}, fn
+        {:ok, val}, {:ok, acc} -> {:ok, [val | acc]}
+        {:ok, _val}, {:error, acc} -> {:error, acc}
+        {:error, val}, {:ok, _acc} -> {:error, [val]}
+        {:error, val}, {:error, acc} -> {:error, [val | acc]}
+      end)
+      |> then(fn {ok_or_error, acc} -> {ok_or_error, Enum.reverse(acc)} end)
+    end
   end
 
   @doc """
@@ -145,29 +128,16 @@ defmodule Result.Calc do
       iex> Result.Calc.sum(data)
       {:error, []}
   """
-  @spec sum([Result.t(any, any)]) :: Result.t([...], [...])
-  def sum(list) do
-    sum(list, {:error, []})
-  end
-
-  defp sum([head | tail], acc) do
-    result =
-      acc
-      |> r_or(head)
-      |> flatten
-
-    sum(tail, result)
-  end
-
-  defp sum([], acc) do
-    acc
-  end
-
-  defp flatten({state, [head | tail]}) when is_list(head) do
-    {state, head ++ tail}
-  end
-
-  defp flatten({state, list}) do
-    {state, list}
+  defmacro sum(list) do
+    quote bind_quoted: [list: list] do
+      list
+      |> Enum.reduce({:error, []}, fn
+        {:ok, val}, {:ok, acc} -> {:ok, [val | acc]}
+        {:ok, val}, {:error, _acc} -> {:ok, [val]}
+        {:error, _val}, {:ok, acc} -> {:ok, acc}
+        {:error, val}, {:error, acc} -> {:error, [val | acc]}
+      end)
+      |> then(fn {ok_or_error, acc} -> {ok_or_error, Enum.reverse(acc)} end)
+    end
   end
 end

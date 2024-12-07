@@ -3,12 +3,13 @@ defmodule Result.Utils do
   A result utility functions
   """
 
-  @spec check(Result.t(a, b)) :: Result.t(a, b) when a: var, b: var
-  def check({state, _} = result) when state in [:ok, :error] do
-    result
-  end
-
-  def check(value) do
-    raise Result.TypeError, value
+  defmacro check(result) do
+    quote bind_quoted: [result: result] do
+      case result do
+        {:ok, _} -> result
+        {:error, _} -> result
+        _ -> raise Result.TypeError, result
+      end
+    end
   end
 end

@@ -8,109 +8,213 @@ defmodule Result do
   @doc """
   See `Result.Ok.of/1`
   """
-  defdelegate ok(value), to: Result.Ok, as: :of
+  defmacro ok(value) do
+    quote bind_quoted: [value: value] do
+      require Result.Ok
+      Result.Ok.of(value)
+    end
+  end
 
   @doc """
   See `Result.Error.of/1`
   """
-  defdelegate error(value), to: Result.Error, as: :of
+  defmacro error(value) do
+    quote bind_quoted: [value: value] do
+      require Result.Error
+      Result.Error.of(value)
+    end
+  end
 
   @doc """
   See `Result.Operators.from/2`
   """
-  defdelegate from(arg1, arg2), to: Result.Operators
+  defmacro from(arg1, arg2) do
+    quote bind_quoted: [arg1: arg1, arg2: arg2] do
+      require Result.Operators
+      Result.Operators.from(arg1, arg2)
+    end
+  end
 
   # Operators
 
   @doc """
   See `Result.Operators.fold/1`
   """
-  defdelegate fold(result), to: Result.Operators
+  defmacro fold(result) do
+    quote bind_quoted: [result: result] do
+      require Result.Operators
+      Result.Operators.fold(result)
+    end
+  end
 
   @doc """
   See `Result.Operators.map/2`
   """
-  defdelegate map(result, f), to: Result.Operators
+  defmacro map(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      require Result.Operators
+      Result.Operators.map(result, f)
+    end
+  end
 
   @doc """
   See `Result.Operators.map2/3`
   """
-  defdelegate map2(result1, result2, f), to: Result.Operators
+  defmacro map2(result1, result2, f) do
+    quote bind_quoted: [result1: result1, result2: result2, f: f] do
+      Result.Operators.map2(result1, result2, f)
+    end
+  end
 
   @doc """
   See `Result.Operators.map_error/2`
   """
-  defdelegate map_error(result, f), to: Result.Operators
+  defmacro map_error(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      require Result.Operators
+      Result.Operators.map_error(result, f)
+    end
+  end
 
   @doc """
   See `Result.Operators.catch_error/3`
   """
-  defdelegate catch_error(result, expected_error, f), to: Result.Operators
+  defmacro catch_error(result, expected_error, f) do
+    quote bind_quoted: [result: result, expected_error: expected_error, f: f] do
+      require Result.Operators
+      Result.Operators.catch_error(result, expected_error, f)
+    end
+  end
 
   @doc """
   See `Result.Operators.catch_all_errors/2`
   """
-  defdelegate catch_all_errors(result, f), to: Result.Operators
+  defmacro catch_all_errors(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      require Result.Operators
+      Result.Operators.catch_all_errors(result, f)
+    end
+  end
 
   @doc """
   See `Result.Operators.perform/2`
   """
-  defdelegate perform(result, f), to: Result.Operators
+  defmacro perform(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      require Result.Operators
+      Result.Operators.perform(result, f)
+    end
+  end
 
   @doc """
   See `Result.Operators.and_then/2`
   """
-  defdelegate and_then(result, f), to: Result.Operators
+  defmacro and_then(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      require Result.Operators
+      Result.Operators.and_then(result, f)
+    end
+  end
 
   @doc """
   See `Result.Operators.and_then_x/2`
   """
-  defdelegate and_then_x(results, f), to: Result.Operators
+  defmacro and_then_x(results, f) do
+    quote bind_quoted: [results: results, f: f] do
+      require Result.Operators
+      Result.Operators.and_then_x(results, f)
+    end
+  end
 
   @doc """
   See `Result.Operators.with_default/2`
   """
-  defdelegate with_default(result, default), to: Result.Operators
+  defmacro with_default(result, default) do
+    quote bind_quoted: [result: result, default: default] do
+      require Result.Operators
+      Result.Operators.with_default(result, default)
+    end
+  end
 
   @doc """
   See `Result.Operators.resolve/1`
   """
-  defdelegate resolve(result), to: Result.Operators
+  defmacro resolve(result) do
+    quote bind_quoted: [result: result] do
+      require Result.Operators
+      Result.Operators.resolve(result)
+    end
+  end
 
   @doc """
   See `Result.Operators.retry/4`
   """
-  defdelegate retry(result, f, count, timeout \\ 1000), to: Result.Operators
+  defmacro retry(result, f, count, timeout \\ 1000) do
+    quote bind_quoted: [result: result, f: f, count: count, timeout: timeout] do
+      require Result.Operators
+      Result.Operators.retry(result, f, count, timeout)
+    end
+  end
 
   @doc """
   See `Result.Operators.error?/1`
   """
-  defdelegate error?(result), to: Result.Operators
+  defmacro error?(result) do
+    quote bind_quoted: [result: result] do
+      require Result.Operators
+      Result.Operators.error?(result)
+    end
+  end
 
   @doc """
   See `Result.Operators.ok?/1`
   """
-  defdelegate ok?(result), to: Result.Operators
+  defmacro ok?(result) do
+    quote bind_quoted: [result: result] do
+      require Result.Operators
+      Result.Operators.ok?(result)
+    end
+  end
 
   # Calculations
 
   @doc """
   See `Result.Calc.r_and/2`
   """
-  defdelegate r_and(r1, r2), to: Result.Calc
+  defmacro r_and(r1, r2) do
+    quote bind_quoted: [r1: r1, r2: r2] do
+      require Result.Calc
+      Result.Calc.r_and(r1, r2)
+    end
+  end
 
   @doc """
   See `Result.Calc.r_or/2`
   """
-  defdelegate r_or(r1, r2), to: Result.Calc
+  defmacro r_or(r1, r2) do
+    quote bind_quoted: [r1: r1, r2: r2] do
+      require Result.Calc
+      Result.Calc.r_or(r1, r2)
+    end
+  end
 
   @doc """
   See `Result.Calc.product/1`
   """
-  defdelegate product(list), to: Result.Calc
+  defmacro product(list) do
+    quote bind_quoted: [list: list] do
+      require Result.Calc
+      Result.Calc.product(list)
+    end
+  end
 
   @doc """
   See `Result.Calc.sum/1`
   """
-  defdelegate sum(list), to: Result.Calc
+  defmacro sum(list) do
+    quote bind_quoted: [list: list] do
+      require Result.Calc
+      Result.Calc.sum(list)
+    end
+  end
 end

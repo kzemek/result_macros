@@ -3,8 +3,6 @@ defmodule Result.Operators do
   A result operators.
   """
 
-  alias Result.Utils
-
   @doc """
   Chain together a sequence of computations that may fail.
 
@@ -19,14 +17,10 @@ defmodule Result.Operators do
       {:error, 1}
 
   """
-  @spec and_then(Result.t(b, a), (a -> Result.t(c, d))) :: Result.t(b | c, d)
-        when a: var, b: var, c: var, d: var
-  def and_then({:ok, val}, f) do
-    f.(val)
-  end
-
-  def and_then({:error, val}, _f) do
-    {:error, val}
+  defmacro and_then(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      with {:ok, val} <- result, do: f.(val)
+    end
   end
 
   @doc """
@@ -43,12 +37,25 @@ defmodule Result.Operators do
       {:error, "ERROR"}
 
   """
-  @spec and_then_x([Result.t(any(), any())], (... -> Result.t(any(), any()))) ::
-          Result.t(any(), any())
-  def and_then_x(args, f) do
-    args
-    |> fold()
-    |> and_then(&apply(f, &1))
+  defmacro and_then_x(args, f) do
+    quote bind_quoted: [args: args, f: f] do
+      case args do
+        [] ->
+          {:ok, nil}
+
+        [{:error, reason} | _] ->
+          {:error, reason}
+
+        [first_arg | rest_args] ->
+          Enum.reduce_while(rest_args, first_arg, fn
+            {:ok, val}, {:ok, acc} ->
+              {:cont, f.(val, acc)}
+
+            {:error, reason}, _ ->
+              {:halt, {:error, reason}}
+          end)
+      end
+    end
   end
 
   @doc """
@@ -67,21 +74,15 @@ defmodule Result.Operators do
       {:error, 1}
 
   """
-  @spec fold([Result.t(any, any)]) :: Result.t(any, [any])
-  def fold(list) do
-    fold(list, [])
-  end
-
-  defp fold([{:ok, v} | tail], acc) do
-    fold(tail, [v | acc])
-  end
-
-  defp fold([{:error, v} | _tail], _acc) do
-    {:error, v}
-  end
-
-  defp fold([], acc) do
-    {:ok, Enum.reverse(acc)}
+  defmacro fold(list) do
+    quote bind_quoted: [list: list] do
+      with {:ok, acc} <-
+             Enum.reduce_while(list, {:ok, []}, fn
+               {:ok, val}, {:ok, acc} -> {:cont, {:ok, [val | acc]}}
+               {:error, reason}, _ -> {:halt, {:error, reason}}
+             end),
+           do: {:ok, Enum.reverse(acc)}
+    end
   end
 
   @doc """
@@ -107,13 +108,18 @@ defmodule Result.Operators do
       iex> Result.Operators.from({:error, "msg"}, "value")
       {:error, "msg"}
   """
-  @spec from(any | nil | :ok | :error | Result.t(any, any), any) :: Result.t(any, any)
-  def from(nil, msg), do: {:error, msg}
-  def from(:ok, value), do: {:ok, value}
-  def from(:error, value), do: {:error, value}
-  def from({:ok, val}, _value), do: {:ok, val}
-  def from({:error, msg}, _value), do: {:error, msg}
-  def from(value, _msg), do: {:ok, value}
+  defmacro from(maybe, msg_or_val) do
+    quote bind_quoted: [maybe: maybe, msg_or_val: msg_or_val] do
+      case maybe do
+        nil -> {:error, msg_or_val}
+        :ok -> {:ok, msg_or_val}
+        :error -> {:error, msg_or_val}
+        {:ok, val} -> {:ok, val}
+        {:error, msg} -> {:error, msg}
+        val -> {:ok, val}
+      end
+    end
+  end
 
   @doc """
   Apply a function `f` to `value` if result is Ok.
@@ -129,12 +135,11 @@ defmodule Result.Operators do
       {:error, 3}
 
   """
-  @spec map(Result.t(any, a), (a -> b)) :: Result.t(any, b) when a: var, b: var
-  def map({:ok, value}, f) when is_function(f, 1) do
-    {:ok, f.(value)}
+  defmacro map(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      with {:ok, val} <- result, do: {:ok, f.(val)}
+    end
   end
-
-  def map({:error, _} = result, _f), do: result
 
   @doc """
   Apply a function if both results are Ok. If not, the first Err will propagate through.
@@ -151,14 +156,11 @@ defmodule Result.Operators do
       {:error, 1}
 
   """
-  @spec map2(Result.t(any, a), Result.t(any, b), (a, b -> c)) :: Result.t(any, c)
-        when a: var, b: var, c: var
-  def map2({:ok, val1}, {:ok, val2}, f) when is_function(f, 2) do
-    {:ok, f.(val1, val2)}
+  defmacro map2(result1, result2, f) do
+    quote bind_quoted: [result1: result1, result2: result2, f: f] do
+      with {:ok, val1} <- result1, {:ok, val2} <- result2, do: {:ok, f.(val1, val2)}
+    end
   end
-
-  def map2({:error, _} = result, _, _f), do: result
-  def map2(_, {:error, _} = result, _f), do: result
 
   @doc """
   Apply a function `f` to `value` if result is Error.
@@ -176,12 +178,11 @@ defmodule Result.Operators do
       {:ok, 3}
 
   """
-  @spec map_error(Result.t(a, any()), (a -> b)) :: Result.t(b, any()) when a: var, b: var
-  def map_error({:error, value}, f) when is_function(f, 1) do
-    {:error, f.(value)}
+  defmacro map_error(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      with {:error, val} <- result, do: {:error, f.(val)}
+    end
   end
-
-  def map_error({:ok, _} = result, _f), do: result
 
   @doc """
   Catch specific error `expected_error` and call function `f` with it.
@@ -202,20 +203,13 @@ defmodule Result.Operators do
       {:ok, 3}
 
   """
-  @spec catch_error(Result.t(a, b), a, (a -> Result.t(c, d))) :: Result.t(a, b) | Result.t(c, d)
-        when a: var, b: var, c: var, d: var
-  def catch_error({:error, err}, expected_error, f) when is_function(f, 1) do
-    result =
-      if err == expected_error do
-        f.(err)
-      else
-        {:error, err}
-      end
-
-    Utils.check(result)
+  defmacro catch_error(result, expected_error, f) do
+    quote bind_quoted: [result: result, expected_error: expected_error, f: f] do
+      require Result.Utils
+      err = expected_error
+      with {:error, ^err} <- result, do: Result.Utils.check(f.(err))
+    end
   end
-
-  def catch_error(result, _, _f), do: result
 
   @doc """
   Catch all errors and call function `f` with it.
@@ -234,15 +228,12 @@ defmodule Result.Operators do
       iex> Result.Operators.catch_all_errors(ok, fn err -> {:ok, Atom.to_string(err)} end)
       {:ok, 3}
   """
-  @spec catch_all_errors(Result.t(a, b), (a -> Result.t(c, d))) :: Result.t(c, b | d)
-        when a: var, b: var, c: var, d: var
-  def catch_all_errors({:error, err}, f) when is_function(f, 1) do
-    err
-    |> f.()
-    |> Utils.check()
+  defmacro catch_all_errors(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      require Result.Utils
+      with {:error, err} <- result, do: Result.Utils.check(f.(err))
+    end
   end
-
-  def catch_all_errors(result, _f), do: result
 
   @doc """
   Perform function `f` on Ok result and return it
@@ -256,13 +247,14 @@ defmodule Result.Operators do
       {:error, 123}
 
   """
-  @spec perform(Result.t(err, val), (val -> any)) :: Result.t(err, val) when err: var, val: var
-  def perform({:ok, value} = result, f) do
-    f.(value)
-    result
+  defmacro perform(result, f) do
+    quote bind_quoted: [result: result, f: f] do
+      with {:ok, val} <- result do
+        f.(val)
+        {:ok, val}
+      end
+    end
   end
-
-  def perform({:error, _} = result, _f), do: result
 
   @doc """
   Return `value` if result is ok, otherwise `default`
@@ -276,9 +268,14 @@ defmodule Result.Operators do
       456
 
   """
-  @spec with_default(Result.t(any, val), val) :: val when val: var
-  def with_default({:ok, value}, _default), do: value
-  def with_default({:error, _}, default), do: default
+  defmacro with_default(result, default) do
+    quote bind_quoted: [result: result, default: default] do
+      case result do
+        {:ok, value} -> value
+        {:error, _} -> default
+      end
+    end
+  end
 
   @doc """
   Return `true` if result is error
@@ -292,9 +289,11 @@ defmodule Result.Operators do
       false
 
   """
-  @spec error?(Result.t(any, any)) :: boolean
-  def error?({:error, _}), do: true
-  def error?(_result), do: false
+  defmacro error?(result) do
+    quote bind_quoted: [result: result] do
+      match?({:error, _}, result)
+    end
+  end
 
   @doc """
   Return `true` if result is ok
@@ -308,9 +307,11 @@ defmodule Result.Operators do
       false
 
   """
-  @spec ok?(Result.t(any, any)) :: boolean
-  def ok?({:ok, _}), do: true
-  def ok?(_result), do: false
+  defmacro ok?(result) do
+    quote bind_quoted: [result: result] do
+      match?({:ok, _}, result)
+    end
+  end
 
   @doc """
   Flatten nested results
@@ -328,13 +329,14 @@ defmodule Result.Operators do
       iex> Result.Operators.resolve({:error, "two"})
       {:error, "two"}
   """
-  @spec resolve(Result.t(any, Result.t(any, any))) :: Result.t(any, any)
-  def resolve({:ok, {state, _value} = result}) when state in [:ok, :error] do
-    result
-  end
-
-  def resolve({:error, _value} = result) do
-    result
+  defmacro resolve(result) do
+    quote bind_quoted: [result: result] do
+      case result do
+        {:ok, {:ok, val}} -> {:ok, val}
+        {:ok, {:error, err}} -> {:error, err}
+        {:error, err} -> {:error, err}
+      end
+    end
   end
 
   @doc """
@@ -358,31 +360,18 @@ defmodule Result.Operators do
       iex> Result.Operators.retry({:ok, "Ok"}, fn(_) -> {:error, "Error"} end, 3, 0)
       {:error, "Error"}
   """
-  @spec retry(Result.t(any, val), (val -> Result.t(any, any)), integer, integer) ::
-          Result.t(any, any)
-        when val: var
-  def retry(res, f, count, timeout \\ 1000)
+  defmacro retry(res, f, count, timeout \\ 1000) do
+    quote bind_quoted: [res: res, f: f, count: count, timeout: timeout] do
+      with {:ok, first_arg} <- res do
+        Enum.reduce_while(1..count//1, f.(first_arg), fn
+          _, {:ok, val} ->
+            {:halt, {:ok, val}}
 
-  def retry({:ok, value}, f, count, timeout) do
-    value
-    |> f.()
-    |> again(value, f, count, timeout)
-  end
-
-  def retry({:error, _} = error, _f, _count, _timeout) do
-    error
-  end
-
-  defp again({:error, _} = error, _value, _f, 0, _timeout) do
-    error
-  end
-
-  defp again({:error, _}, value, f, count, timeout) do
-    Process.sleep(timeout)
-    again(f.(value), value, f, count - 1, timeout)
-  end
-
-  defp again(res, _value, _f, _count, _timeout) do
-    res
+          _, {:error, reason} ->
+            Process.sleep(timeout)
+            {:cont, f.(first_arg)}
+        end)
+      end
+    end
   end
 end

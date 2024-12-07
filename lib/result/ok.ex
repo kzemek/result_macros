@@ -17,8 +17,9 @@ defmodule Result.Ok do
       {:ok, 12345}
 
   """
-  @spec of(arg) :: t(arg) when arg: var
-  def of(value) do
-    {:ok, value}
+  defmacro of(value) do
+    quote bind_quoted: [value: value] do
+      {:ok, value}
+    end
   end
 end

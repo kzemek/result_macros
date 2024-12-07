@@ -4,6 +4,7 @@ defmodule ResultOperatorTest do
 
   import ExUnit.CaptureIO
 
+  require Result.Operators
   alias Result.Operators
 
   describe "Perform" do
